@@ -132,10 +132,7 @@ def get_house_percommunity(city, communityname):
                 info_dict.update({u'link': housetitle.a.get('href')})
 
                 houseaddr = name.find("div", {"class": "address"})
-                if city == 'bj':
-                    info = houseaddr.div.get_text().split('/')
-                else:
-                    info = houseaddr.div.get_text().split('|')
+                info = houseaddr.div.get_text().split('|')
                 info_dict.update({u'community': communityname})
                 info_dict.update({u'housetype': info[1].strip()})
                 info_dict.update({u'square': info[2].strip()})
@@ -464,10 +461,7 @@ def get_house_perregion(city, district):
                     info_dict.update({u'houseID': houseID})
 
                     houseinfo = name.find("div", {"class": "houseInfo"})
-                    if city == 'bj':
-                        info = houseinfo.get_text().split('/')
-                    else:
-                        info = houseinfo.get_text().split('|')
+                    info = houseinfo.get_text().split('|')
                     info_dict.update({u'community': info[0]})
                     info_dict.update({u'housetype': info[1]})
                     info_dict.update({u'square': info[2]})
