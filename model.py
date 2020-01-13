@@ -23,8 +23,8 @@ elif settings.DBENGINE.lower() == 'postgresql':
         user=settings.DBUSER,
         password=settings.DBPASSWORD,
         host=settings.DBHOST,
-        charset='utf8',
-        use_unicode=True,
+        #charset='utf8',
+        #use_unicode=True,
     )
 
 else:

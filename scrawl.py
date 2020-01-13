@@ -10,6 +10,7 @@ def get_communitylist(city):
             res.append(community.title)
     return res
 
+
 if __name__ == "__main__":
     regionlist = settings.REGIONLIST  # only pinyin support
     city = settings.CITY
