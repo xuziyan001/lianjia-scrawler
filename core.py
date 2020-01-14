@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 from bs4 import BeautifulSoup
 import model
 import misc
@@ -71,7 +73,7 @@ def GetCommunityByRegionlist(city, regionlist=[u'xicheng']):
 def GetHouseByRegionlist(city, regionlist=[u'xicheng']):
     starttime = datetime.datetime.now()
     for regionname in regionlist:
-        logging.info("Get Onsale House Infomation in %s" % regionname)
+        logging.info("Get Onsale House Information in %s" % regionname)
         try:
             get_house_perregion(city, regionname)
         except Exception as e:
@@ -435,10 +437,12 @@ def get_house_perregion(city, district):
     if check_block(soup):
         return
     total_pages = misc.get_total_pages(url)
-    if total_pages == None:
+    if total_pages is None:
         row = model.Houseinfo.select().count()
         raise RuntimeError("Finish at %s because total_pages is None" % row)
 
+    #total_pages = 10
+    house_ids = set()
     for page in range(total_pages):
         if page > 0:
             url_page = baseUrl + u"ershoufang/%s/pg%d/" % (district, page)
@@ -448,7 +452,8 @@ def get_house_perregion(city, district):
         log_progress("GetHouseByRegionlist", district, page + 1, total_pages)
         data_source = []
         hisprice_data_source = []
-        for ultag in soup.findAll("ul", {"class": "sellListContent"}):
+        ultags = soup.findAll("ul", {"class": "sellListContent"})
+        for ultag in ultags:
             for name in ultag.find_all('li'):
                 i = i + 1
                 info_dict = {}
@@ -458,6 +463,9 @@ def get_house_perregion(city, district):
                         {u'title': housetitle.a.get_text().strip()})
                     info_dict.update({u'link': housetitle.a.get('href')})
                     houseID = housetitle.a.get('data-housecode')
+                    # 对houseID进行去重
+                    if houseID in house_ids:
+                        continue
                     info_dict.update({u'houseID': houseID})
 
                     houseinfo = name.find("div", {"class": "houseInfo"})
@@ -481,7 +489,7 @@ def get_house_perregion(city, district):
                         {u'followInfo': followInfo.get_text().strip()})
 
                     taxfree = name.find("span", {"class": "taxfree"})
-                    if taxfree == None:
+                    if taxfree is None:
                         info_dict.update({u"taxtype": ""})
                     else:
                         info_dict.update(
@@ -494,6 +502,7 @@ def get_house_perregion(city, district):
                     unitPrice = name.find("div", {"class": "unitPrice"})
                     info_dict.update(
                         {u'unitPrice': unitPrice.get("data-price")})
+                    info_dict.update({"validdate": datetime.datetime.now()})
                 except:
                     continue
 
@@ -501,16 +510,21 @@ def get_house_perregion(city, district):
                 data_source.append(info_dict)
                 hisprice_data_source.append(
                     {"houseID": info_dict["houseID"], "totalPrice": info_dict["totalPrice"]})
-                # model.Houseinfo.insert(**info_dict).upsert().execute()
-                #model.Hisprice.insert(houseID=info_dict['houseID'], totalPrice=info_dict['totalPrice']).upsert().execute()
+                house_ids.add(info_dict["houseID"])
 
         with model.database.atomic():
-            if data_source:
-                model.Houseinfo.insert_many(data_source).upsert().execute()
-            if hisprice_data_source:
-                model.Hisprice.insert_many(
-                    hisprice_data_source).upsert().execute()
-        time.sleep(1)
+            try:
+                for data in data_source:
+                    model.Houseinfo.insert(data).on_conflict(
+                        conflict_target=(model.Houseinfo.houseID,),
+                        update=data,
+                        #preserve=(model.Houseinfo.houseID, ),
+                    ).execute()
+                model.Hisprice.insert_many(hisprice_data_source).execute()
+            except Exception as e:
+                print("error: %s" % e)
+        log_progress("GetHouseByRegionlist inserted", district, page + 1, total_pages)
+        time.sleep(0.5)
 
 
 def get_rent_perregion(city, district):

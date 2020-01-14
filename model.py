@@ -59,30 +59,31 @@ class Community(BaseModel):
 
 
 class Houseinfo(BaseModel):
-    houseID = CharField(primary_key=True)
-    title = CharField()
-    link = CharField()
-    community = CharField()
-    years = CharField()
-    housetype = CharField()
-    square = CharField()
-    direction = CharField()
-    floor = CharField()
-    taxtype = CharField()
-    totalPrice = CharField()
-    unitPrice = CharField()
-    followInfo = CharField()
-    decoration = CharField()
+    houseID = CharField(primary_key=True, unique=True)
+    title = CharField(default="")
+    link = CharField(default="")
+    community = CharField(default="")
+    years = CharField(default="")
+    housetype = CharField(default="")
+    square = CharField(default="")
+    direction = CharField(default="")
+    floor = CharField(default="")
+    taxtype = CharField(default="")
+    totalPrice = CharField(default="")
+    unitPrice = CharField(default="")
+    followInfo = CharField(default="")
+    decoration = CharField(default="")
     validdate = DateTimeField(default=datetime.datetime.now)
 
 
 class Hisprice(BaseModel):
+    id = BigAutoField(primary_key=True)
     houseID = CharField()
     totalPrice = CharField()
     date = DateTimeField(default=datetime.datetime.now)
 
-    class Meta:
-        primary_key = CompositeKey('houseID', 'totalPrice')
+    #class Meta:
+    #    primary_key = CompositeKey('houseID', 'totalPrice')
 
 
 class Sellinfo(BaseModel):
